@@ -1,6 +1,6 @@
 import json
 import os
-from patient_data.helper import store_jsons
+from patient_data.helper import store_fhir_files
 
 
 def store_fhir(relative_file_path):
@@ -18,5 +18,5 @@ def store_fhir(relative_file_path):
     for file_path in file_paths:
         with open(file_path, "r") as json_file:
             resource_types.append(json.loads(json_file))
-    store_jsons(resource_types)
+    store_fhir_files(resource_types)
     return True
