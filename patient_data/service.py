@@ -14,9 +14,9 @@ def store_fhir(relative_file_path):
         ]
     else:
         file_paths = [file_path]
-    resource_types = []
+    fhir_files = []
     for file_path in file_paths:
         with open(file_path, "r") as json_file:
-            resource_types.append(json.loads(json_file))
-    store_fhir_files(resource_types)
+            fhir_files.append(json.load(json_file))
+    store_fhir_files(fhir_files)
     return True
