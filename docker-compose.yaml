@@ -18,7 +18,7 @@ services:
     build:
       context: .
     volumes:
-      - ./meltexapp:/app/meltexapp
+      - ./patient_data:/app/patient_data
     ports:
       - 8000:8000
       - 3000:3000
