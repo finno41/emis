@@ -76,13 +76,13 @@ def get_value_from_keys(field_data, fhir_resource_data, resource, multiple):
     if multiple:
         value_list = value
         values = []
-        if value_list and not optional:
+        if value_list:
             for value in value_list:
                 list_value = find_from_keys(
-                    multiple["keys"], value_list, optional, field_data, resource
+                    multiple["loop_keys"], value, optional, field_data, resource
                 )
                 if regex and list_value:
-                    value = re.search(regex, value)[0]
+                    list_value = re.search(regex, list_value)[0]
                 values.append(list_value)
             return values
         else:
@@ -93,7 +93,7 @@ def get_value_from_keys(field_data, fhir_resource_data, resource, multiple):
 
 
 def create_join_model(model_instance, field_data, field_value, entry_id):
-    if not field_value is None:
+    if field_value is not None:
         join_table_data = field_data.get("join_table")
         model_data = join_table_data["model_data"]
         join_model_data = join_table_data["join_model_data"]
@@ -110,7 +110,7 @@ def create_join_model(model_instance, field_data, field_value, entry_id):
         join_model = join_model_data["model"]
         for model in models:
             # check join exists and ignore if it does
-            if not join_model.objecs.filter(
+            if not join_model.objects.filter(
                 **{
                     model_attribute_name: model,
                     join_table_data["own_id_attr"]: entry_id,
