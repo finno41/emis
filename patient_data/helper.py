@@ -9,9 +9,6 @@ def store_fhir_files(data: list):
     processable_resource_types = list(RESOURCE_CONFIG.keys())
     existing_patients = Patient.objects.all()
     existing_patient_ids = list(existing_patients.values_list("id", flat=True))
-    # bulk_create_models = {}
-    # bulk_create_patients = []
-    # bulk_create_join_tables = {}
     for fhir_file in data:
         if fhir_file["resourceType"] == "Bundle":
             entries = fhir_file["entry"]
@@ -41,10 +38,7 @@ def store_fhir_files(data: list):
             ][0]["code"]
             if len(patient.marital_status) > 3:
                 print(patient.marital_status)
-            # if patient_exists:
             patient.save()
-            # else:
-            #     bulk_create_patients.append(patient)
             for entry in entries:
                 resource_type = entry["resource"]["resourceType"]
                 if resource_type in processable_resource_types:
@@ -58,25 +52,14 @@ def store_fhir_files(data: list):
                     model_instance.patient = patient
                     for field_data in resource["fields"]:
                         multiple = field_data.get("multiple", False)
-                        if multiple:
-                            field_value = get_value_from_keys(
-                                field_data, entry, resource, multiple
-                            )
+                        field_value = get_value_from_keys(
+                            field_data, entry, resource, multiple
+                        )
                         join_table_data = field_data.get("join_table")
                         if join_table_data:
                             join_table_data = create_join_model(
                                 model_instance, field_data, field_value, entry_id
                             )
-                            # join_table_model = join_table_data["model"]
-                            # join_model_instance = join_table_model["model_instance"]
-                            # if join_table_model in bulk_create_join_tables:
-                            #     bulk_create_models[join_table_model].append(
-                            #         join_model_instance
-                            #     )
-                            # else:
-                            #     bulk_create_models[join_table_model] = (
-                            #         join_model_instance
-                            #     )
                         else:
                             setattr(
                                 model_instance,
@@ -84,15 +67,6 @@ def store_fhir_files(data: list):
                                 field_value,
                             )
                     model_instance.save()
-                    # if model in bulk_create_models:
-                    #     bulk_create_models[model].append(model_instance)
-                    # else:
-                    #     bulk_create_models[model] = [model_instance]
-    # Patient.objects.bulk_create(bulk_create_patients)
-    # for model, model_instances in bulk_create_models.items():
-    #     model.objects.bulk_create(model_instances)
-    # for model, model_instances in bulk_create_join_tables.items():
-    #     model.objects.bulk_create(model_instances)
 
 
 def get_value_from_keys(field_data, fhir_resource_data, resource, multiple):
