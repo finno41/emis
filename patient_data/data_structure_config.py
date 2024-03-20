@@ -1,8 +1,9 @@
-from patient_data.models import Encounter
+from patient_data.models import Encounter, Claim, Condition, RelatedCondition
 
 RESOURCE_CONFIG = {
     "Encounter": {
         "model": Encounter,
+        "key": "encounter",
         "fields": [
             {"field_name": "id", "fhir_keys": ["resource", "id"]},
             {"field_name": "status", "fhir_keys": ["resource", "status"]},
@@ -28,7 +29,82 @@ RESOURCE_CONFIG = {
             },
         ],
     },
-    # "Claim": {"fields": [{"field_name": "id", "fhir_keys": ["id"]}]},
+    "Condition": {
+        "model": Condition,
+        "key": "condition",
+        "fields": [
+            {"field_name": "id", "fhir_keys": ["resource", "id"]},
+            {
+                "field_name": "clinical_status",
+                "fhir_keys": ["resource", "clinicalStatus", "coding", 0, "code"],
+            },
+            {
+                "field_name": "category",
+                "fhir_keys": ["resource", "category", 0, "coding", 0, "code"],
+            },
+            {
+                "field_name": "code",
+                "fhir_keys": ["resource", "code", "coding", 0, "code"],
+            },
+            {
+                "field_name": "onset_date_time",
+                "fhir_keys": ["resource", "onsetDateTime"],
+            },
+            {
+                "field_name": "recorded_date",
+                "fhir_keys": ["resource", "recordedDate"],
+            },
+        ],
+    },
+    "Claim": {
+        "model": Claim,
+        "key": "claim",
+        "fields": [
+            {"field_name": "id", "fhir_keys": ["resource", "id"]},
+            {"field_name": "created", "fhir_keys": ["resource", "created"]},
+            {
+                "field_name": "priority",
+                "fhir_keys": ["resource", "priority", "coding", 0, "code"],
+            },
+            {
+                "field_name": "diagnosis",
+                "fhir_keys": [
+                    "resource",
+                    "diagnosis",
+                    0,
+                    "diagnosisReference",
+                    "reference",
+                ],
+                "optional": True,
+                "join_table": {
+                    "model_data": {"model": Condition, "name": "condition"},
+                    "join_model_data": {
+                        "model": RelatedCondition,
+                        "name": "related_condition",
+                    },
+                    "own_id_attr": "resource_id",
+                    "attributes": {"resource_type": "claim"},
+                },
+                "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            },
+            {
+                "field_name": "value_total",
+                "fhir_keys": [
+                    "resource",
+                    "total",
+                    "value",
+                ],
+            },
+            {
+                "field_name": "value_currency",
+                "fhir_keys": [
+                    "resource",
+                    "total",
+                    "currency",
+                ],
+            },
+        ],
+    },
     # "Medication": {"fields": [{"field_name": "", "fhir_keys": []}]},
     # "DocumentReference": {"fields": [{"field_name": "", "fhir_keys": []}]},
     # "MedicationRequest": {"fields": [{"field_name": "", "fhir_keys": []}]},
