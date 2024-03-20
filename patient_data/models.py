@@ -35,6 +35,10 @@ class Patient(models.Model):
     marital_status = models.CharField(max_length=3, choices=MARITAL_STATUS_OPTIONS)
     language = models.CharField(max_length=5, choices=LANGUAGE_OPTIONS)
 
+    @classmethod
+    def get_timezone_fields(cls):
+        return ["deceased_date_time"]
+
 
 class Encounter(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -65,6 +69,10 @@ class Encounter(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
+    @classmethod
+    def get_timezone_fields(cls):
+        return ["start_time", "end_time"]
+
 
 class Condition(models.Model):
     # some of the fields here should have had choices but in the interest of time I've skipped them
@@ -75,6 +83,10 @@ class Condition(models.Model):
     code = models.CharField(max_length=50)
     onset_date_time = models.DateTimeField()
     recorded_date = models.DateTimeField()
+
+    @classmethod
+    def get_timezone_fields(cls):
+        return ["onset_date_time", "recorded_date"]
 
 
 # the assumption here is that multiple patient actions could relate to conditions
@@ -93,3 +105,7 @@ class Claim(models.Model):
     priority = models.CharField(max_length=8, choices=PRIORITY_OPTIONS)
     value_total = models.FloatField()
     value_currency = models.CharField(max_length=3, choices=CURRENCY_OPTIONS)
+
+    @classmethod
+    def get_timezone_fields(cls):
+        return ["created"]
