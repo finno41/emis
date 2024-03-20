@@ -37,8 +37,6 @@ def store_fhir_files(data: list):
             patient.language = main_patient_data["communication"][0]["language"][
                 "coding"
             ][0]["code"]
-            if len(patient.marital_status) > 3:
-                print(patient.marital_status)
             patient.save()
             for entry in entries:
                 resource_type = entry["resource"]["resourceType"]
