@@ -71,11 +71,9 @@ RESOURCE_CONFIG = {
                 "fhir_keys": [
                     "resource",
                     "diagnosis",
-                    0,
-                    "diagnosisReference",
-                    "reference",
                 ],
                 "optional": True,
+                "multiple": {"loop_keys": ["diagnosisReference", "reference"]},
                 "join_table": {
                     "model_data": {"model": Condition, "name": "condition"},
                     "join_model_data": {

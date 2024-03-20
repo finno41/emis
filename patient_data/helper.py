@@ -57,7 +57,11 @@ def store_fhir_files(data: list):
                     )
                     model_instance.patient = patient
                     for field_data in resource["fields"]:
-                        field_value = get_value_from_keys(field_data, entry, resource)
+                        multiple = field_data.get("multiple", False)
+                        if multiple:
+                            field_value = get_value_from_keys(
+                                field_data, entry, resource, multiple
+                            )
                         join_table_data = field_data.get("join_table")
                         if join_table_data:
                             join_table_data = create_join_model(
@@ -91,9 +95,71 @@ def store_fhir_files(data: list):
     #     model.objects.bulk_create(model_instances)
 
 
-def get_value_from_keys(field_data, fhir_resource_data, resource):
+def get_value_from_keys(field_data, fhir_resource_data, resource, multiple):
     keys = field_data["fhir_keys"]
     optional = field_data.get("optional", False)
+    regex = field_data.get("regex", False)
+    value = find_from_keys(keys, fhir_resource_data, optional, field_data, resource)
+    if multiple:
+        value_list = value
+        values = []
+        if value_list and not optional:
+            for value in value_list:
+                list_value = find_from_keys(
+                    multiple["keys"], value_list, optional, field_data, resource
+                )
+                if regex and list_value:
+                    value = re.search(regex, value)[0]
+                values.append(list_value)
+            return values
+        else:
+            return None
+    elif regex:
+        value = re.search(regex, value)[0]
+    return value
+
+
+def create_join_model(model_instance, field_data, field_value, entry_id):
+    if not field_value is None:
+        join_table_data = field_data.get("join_table")
+        model_data = join_table_data["model_data"]
+        join_model_data = join_table_data["join_model_data"]
+        if isinstance(field_value, list):
+            models = [
+                model_data["model"].objects.get(id=value)
+                for value in field_value
+                if value
+            ]
+        else:
+            models = [model_data["model"].objects.get(id=field_value)]
+
+        model_attribute_name = model_data["name"]
+        join_model = join_model_data["model"]
+        for model in models:
+            # check join exists and ignore if it does
+            if not join_model.objecs.filter(
+                **{
+                    model_attribute_name: model,
+                    join_table_data["own_id_attr"]: entry_id,
+                }
+            ).exists():
+                join_model_instance = join_model()
+                setattr(join_model_instance, model_attribute_name, model)
+                setattr(join_model_instance, join_table_data["own_id_attr"], entry_id)
+                for attribute, value in join_table_data["attributes"].items():
+                    setattr(join_model_instance, attribute, value)
+                join_model_instance.save()
+        # return {"model_instance": join_model_instance, "model": join_model}
+
+
+def get_id_from_fhir_resource(resource_config, fhir_entry):
+    id_field_data = next(
+        field for field in resource_config["fields"] if field["field_name"] == "id"
+    )
+    return get_value_from_keys(id_field_data, fhir_entry, resource_config, False)
+
+
+def find_from_keys(keys, fhir_resource_data, optional, field_data, resource):
     value = fhir_resource_data
     for key in keys:
         try:
@@ -105,31 +171,4 @@ def get_value_from_keys(field_data, fhir_resource_data, resource):
                 raise KeyError(
                     f"fhir keys '{keys}' are incorrect for field '{field_data['field_name']}' for resource '{resource['key']}'"
                 )
-    regex = field_data.get("regex", False)
-    if regex:
-        value = re.search(regex, value)[0]
     return value
-
-
-def create_join_model(model_instance, field_data, field_value, entry_id):
-    if not field_value is None:
-        join_table_data = field_data.get("join_table")
-        model_data = join_table_data["model_data"]
-        join_model_data = join_table_data["join_model_data"]
-        model = model_data["model"].objects.get(id=field_value)
-        model_attribute_name = model_data["name"]
-        join_model = join_model_data["model"]
-        join_model_instance = join_model()
-        setattr(join_model_instance, model_attribute_name, model)
-        setattr(join_model_instance, join_table_data["own_id_attr"], entry_id)
-        for attribute, value in join_table_data["attributes"].items():
-            setattr(join_model_instance, attribute, value)
-        join_model_instance.save()
-        # return {"model_instance": join_model_instance, "model": join_model}
-
-
-def get_id_from_fhir_resource(resource_config, fhir_entry):
-    id_field_data = next(
-        field for field in resource_config["fields"] if field["field_name"] == "id"
-    )
-    return get_value_from_keys(id_field_data, fhir_entry, resource_config)
