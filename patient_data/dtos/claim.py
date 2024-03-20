@@ -1,5 +1,6 @@
 import pandas as pd
 from patient_data.data.patient import get_patients_by_ids
+from patient_data.data.related_condition import get_related_condition_by_ids
 from patient_data.models import Claim
 
 
