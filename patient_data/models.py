@@ -69,6 +69,7 @@ class Encounter(models.Model):
 class Condition(models.Model):
     # some of the fields here should have had choices but in the interest of time I've skipped them
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     clinical_status = models.CharField(max_length=50)
     category = models.CharField(max_length=50)
     code = models.CharField(max_length=50)
