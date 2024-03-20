@@ -20,3 +20,7 @@ def store_fhir(relative_file_path):
             fhir_files.append(json.load(json_file))
     store_fhir_files(fhir_files)
     return True
+
+
+def export_data():
+    pass
