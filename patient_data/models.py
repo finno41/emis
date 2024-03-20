@@ -1,5 +1,6 @@
 from django.db import models
 from patient_data.model_options.language import LANGUAGE_OPTIONS
+from patient_data.model_options.currency import CURRENCY_OPTIONS
 import uuid
 
 
@@ -63,3 +64,31 @@ class Encounter(models.Model):
     code = models.CharField(max_length=40)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+
+
+class Condition(models.Model):
+    # some of the fields here should have had choices but in the interest of time I've skipped them
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    clinical_status = models.CharField(max_length=50)
+    category = models.CharField(max_length=50)
+    code = models.CharField(max_length=50)
+    onset_date_time = models.DateTimeField()
+    recorded_date = models.DateTimeField()
+
+
+# the assumption here is that multiple patient actions could relate to conditions
+class RelatedCondition(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    condition = models.ForeignKey(Condition, on_delete=models.CASCADE)
+    resource_id = models.UUIDField()
+    resource_type = models.CharField(max_length=50)
+
+
+class Claim(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    created = models.DateTimeField()
+    PRIORITY_OPTIONS = {"stat": "Immediate", "normal": "Normal", "deferred": "Deferred"}
+    priority = models.CharField(max_length=8, choices=PRIORITY_OPTIONS)
+    value_total = models.FloatField()
+    value_currency = models.CharField(max_length=3, choices=CURRENCY_OPTIONS)
