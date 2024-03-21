@@ -148,11 +148,11 @@ def find_from_keys(keys, fhir_resource_data, optional, field_data, resource):
 
 
 def create_patient(
-    gender,
     birth_date,
     city,
     state,
     country,
+    gender,
     marital_status,
     language,
     deceased_date_time=False,
