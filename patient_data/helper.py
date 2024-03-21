@@ -9,6 +9,7 @@ def store_fhir_files(data: list):
     processable_resource_types = list(RESOURCE_CONFIG.keys())
     existing_patients = Patient.objects.all()
     existing_patient_ids = list(existing_patients.values_list("id", flat=True))
+    patients_with_error = []
     for fhir_file in data:
         if fhir_file["resourceType"] == "Bundle":
             entries = fhir_file["entry"]
@@ -37,35 +38,42 @@ def store_fhir_files(data: list):
             patient.language = main_patient_data["communication"][0]["language"][
                 "coding"
             ][0]["code"]
-            patient.save()
-            for entry in entries:
-                resource_type = entry["resource"]["resourceType"]
-                if resource_type in processable_resource_types:
-                    resource = RESOURCE_CONFIG[resource_type]
-                    entry_id = get_id_from_fhir_resource(resource, entry)
-                    model = resource["model"]
-                    model_exists = model.objects.filter(id=entry_id).exists()
-                    model_instance = (
-                        model.objects.get(id=entry_id) if model_exists else model()
-                    )
-                    model_instance.patient = patient
-                    for field_data in resource["fields"]:
-                        multiple = field_data.get("multiple", False)
-                        field_value = get_value_from_keys(
-                            field_data, entry, resource, multiple
+            try:
+                patient.save()
+            except:
+                patients_with_error.append(patient.id)
+            else:
+                for entry in entries:
+                    resource_type = entry["resource"]["resourceType"]
+                    if resource_type in processable_resource_types:
+                        resource = RESOURCE_CONFIG[resource_type]
+                        entry_id = get_id_from_fhir_resource(resource, entry)
+                        model = resource["model"]
+                        model_exists = model.objects.filter(id=entry_id).exists()
+                        model_instance = (
+                            model.objects.get(id=entry_id) if model_exists else model()
                         )
-                        join_table_data = field_data.get("join_table")
-                        if join_table_data:
-                            join_table_data = create_join_model(
-                                model_instance, field_data, field_value, entry_id
+                        model_instance.patient = patient
+                        for field_data in resource["fields"]:
+                            multiple = field_data.get("multiple", False)
+                            field_value = get_value_from_keys(
+                                field_data, entry, resource, multiple
                             )
-                        else:
-                            setattr(
-                                model_instance,
-                                field_data["field_name"],
-                                field_value,
-                            )
-                    model_instance.save()
+                            join_table_data = field_data.get("join_table")
+                            if join_table_data:
+                                join_table_data = create_join_model(
+                                    model_instance, field_data, field_value, entry_id
+                                )
+                            else:
+                                setattr(
+                                    model_instance,
+                                    field_data["field_name"],
+                                    field_value,
+                                )
+                        model_instance.save()
+    print(
+        f"The following patients were not saved due to incorrect data: '{patients_with_error}'"
+    )
 
 
 def get_value_from_keys(field_data, fhir_resource_data, resource, multiple):
