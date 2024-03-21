@@ -1,14 +1,12 @@
 from patient_data.models import Patient
 from patient_data.data.patient import get_patient_by_id
-from patient_data.data_structure_config import RESOURCE_CONFIG
+from patient_data.data_structure_config import RESOURCE_CONFIG, PATIENT_CONFIG
 import re
 import uuid
 
 
 def store_fhir_files(data: list):
     processable_resource_types = list(RESOURCE_CONFIG.keys())
-    existing_patients = Patient.objects.all()
-    existing_patient_ids = list(existing_patients.values_list("id", flat=True))
     patients_with_error = []
     for fhir_file in data:
         if fhir_file["resourceType"] == "Bundle":
@@ -21,59 +19,58 @@ def store_fhir_files(data: list):
             main_patient_data = patient_data["resource"]
             patient_id = main_patient_data["id"]
             print(f"Storing data for patient '{patient_id}'")
-            patient_exists = uuid.UUID(patient_id) in existing_patient_ids
-            patient = get_patient_by_id(patient_id) if patient_exists else Patient()
-            patient.id = patient_id
-            patient.gender = main_patient_data["gender"]
-            patient.birth_date = main_patient_data["birthDate"]
-            # the documentation suggests we should treat the absence of a deceases time as the user being alive
-            patient.deceased_date_time = main_patient_data.get("deceasedDateTime")
-            address_data = main_patient_data["address"][0]
-            patient.city = address_data["city"]
-            patient.state = address_data["state"]
-            patient.country = address_data["country"]
-            patient.marital_status = main_patient_data["maritalStatus"]["coding"][0][
-                "code"
-            ]
-            patient.language = main_patient_data["communication"][0]["language"][
-                "coding"
-            ][0]["code"]
+            resource = PATIENT_CONFIG
             try:
-                patient.save()
+                patient = store_resource(
+                    patient_data,
+                    processable_resource_types,
+                    False,
+                    resource=resource,
+                    resource_type_check=False,
+                )
             except:
                 patients_with_error.append(patient.id)
             else:
                 for entry in entries:
-                    resource_type = entry["resource"]["resourceType"]
-                    if resource_type in processable_resource_types:
-                        resource = RESOURCE_CONFIG[resource_type]
-                        entry_id = get_id_from_fhir_resource(resource, entry)
-                        model = resource["model"]
-                        model_exists = model.objects.filter(id=entry_id).exists()
-                        model_instance = (
-                            model.objects.get(id=entry_id) if model_exists else model()
-                        )
-                        model_instance.patient = patient
-                        for field_data in resource["fields"]:
-                            multiple = field_data.get("multiple", False)
-                            field_value = get_value_from_keys(
-                                field_data, entry, resource, multiple
-                            )
-                            join_table_data = field_data.get("join_table")
-                            if join_table_data:
-                                join_table_data = create_join_model(
-                                    model_instance, field_data, field_value, entry_id
-                                )
-                            else:
-                                setattr(
-                                    model_instance,
-                                    field_data["field_name"],
-                                    field_value,
-                                )
-                        model_instance.save()
+                    store_resource(entry, processable_resource_types, patient)
     print(
         f"The following patients were not saved due to incorrect data: '{patients_with_error}'"
     )
+
+
+def store_resource(
+    entry,
+    processable_resource_types,
+    patient,
+    resource=False,
+    resource_type_check=True,
+):
+    resource_type = entry["resource"]["resourceType"]
+    if resource_type in processable_resource_types or not resource_type_check:
+        if not resource:
+            resource = RESOURCE_CONFIG[resource_type]
+        entry_id = get_id_from_fhir_resource(resource, entry)
+        model = resource["model"]
+        model_exists = model.objects.filter(id=entry_id).exists()
+        model_instance = model.objects.get(id=entry_id) if model_exists else model()
+        if patient:
+            model_instance.patient = patient
+        for field_data in resource["fields"]:
+            multiple = field_data.get("multiple", False)
+            field_value = get_value_from_keys(field_data, entry, resource, multiple)
+            join_table_data = field_data.get("join_table")
+            if join_table_data:
+                join_table_data = create_join_model(
+                    model_instance, field_data, field_value, entry_id
+                )
+            else:
+                setattr(
+                    model_instance,
+                    field_data["field_name"],
+                    field_value,
+                )
+        model_instance.save()
+        return model_instance
 
 
 def get_value_from_keys(field_data, fhir_resource_data, resource, multiple):
@@ -117,7 +114,7 @@ def create_join_model(model_instance, field_data, field_value, entry_id):
         model_attribute_name = model_data["name"]
         join_model = join_model_data["model"]
         for model in models:
-            # check join exists and ignore if it does
+            # check join table exists and ignore if it does
             if not join_model.objects.filter(
                 **{
                     model_attribute_name: model,
@@ -130,7 +127,6 @@ def create_join_model(model_instance, field_data, field_value, entry_id):
                 for attribute, value in join_table_data["attributes"].items():
                     setattr(join_model_instance, attribute, value)
                 join_model_instance.save()
-        # return {"model_instance": join_model_instance, "model": join_model}
 
 
 def get_id_from_fhir_resource(resource_config, fhir_entry):

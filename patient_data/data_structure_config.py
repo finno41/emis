@@ -1,4 +1,50 @@
-from patient_data.models import Encounter, Claim, Condition, RelatedCondition
+from patient_data.models import Encounter, Claim, Condition, RelatedCondition, Patient
+
+PATIENT_CONFIG = {
+    "model": Patient,
+    "key": "patient",
+    "fields": [
+        {"field_name": "id", "fhir_keys": ["resource", "id"]},
+        {"field_name": "gender", "fhir_keys": ["resource", "gender"]},
+        {
+            "field_name": "birth_date",
+            "fhir_keys": ["resource", "birthDate"],
+        },
+        {
+            "field_name": "deceased_date_time",
+            "fhir_keys": ["resource", "deceasedDateTime"],
+            "optional": True,
+        },
+        {
+            "field_name": "city",
+            "fhir_keys": ["resource", "address", 0, "city"],
+        },
+        {
+            "field_name": "state",
+            "fhir_keys": ["resource", "address", 0, "state"],
+        },
+        {
+            "field_name": "country",
+            "fhir_keys": ["resource", "address", 0, "country"],
+        },
+        {
+            "field_name": "marital_status",
+            "fhir_keys": ["resource", "maritalStatus", "coding", 0, "code"],
+        },
+        {
+            "field_name": "language",
+            "fhir_keys": [
+                "resource",
+                "communication",
+                0,
+                "language",
+                "coding",
+                0,
+                "code",
+            ],
+        },
+    ],
+}
 
 RESOURCE_CONFIG = {
     "Encounter": {
