@@ -1,3 +1,58 @@
 from django.test import TestCase
+from patient_data.models import Patient, Encounter, Condition, Claim
+from django.db.utils import IntegrityError
+from patient_data.helper import create_patient
+from django.db import transaction
+from patient_data.test_helper import get_optional_fields_test_data
+from parameterized import parameterized
 
 # Create your tests here.
+
+
+class HfirTests(TestCase):
+    def setUp(self):
+        self.patient = create_patient(
+            "2024-01-01", "New York", "NYC", "US", "male", "A", "da"
+        )
+
+    optional_fields = [
+        {
+            "model": Patient,
+            "key": "patient",
+            "correct_data": {
+                "city": "New York",
+                "birth_date": "2024-01-01",
+                "state": "NYC",
+                "country": "US",
+                "gender": "male",
+                "marital_status": "A",
+                "language": "da",
+            },
+            "incorrect_fields": [
+                {"field": "gender", "inputs": ["dsgkal", "ikgnaj"]},
+                {"field": "marital_status", "inputs": ["SOS", "DNF", "B"]},
+                {"field": "language", "inputs": ["aa", "ab", "ac"]},
+            ],
+        }
+    ]
+    optional_test_data = get_optional_fields_test_data(optional_fields)
+
+    @parameterized.expand(optional_test_data)
+    def test_database_validation(self, optional_fields):
+        for i, optional_field_data in enumerate(optional_fields):
+            with self.subTest(test_number=i + 1):
+                model = optional_field_data["model"]
+                model_instance = model()
+                correct_data = optional_field_data["correct_data"]
+                for attribute, value in correct_data.items():
+                    setattr(model_instance, attribute, value)
+                for field_data in optional_field_data["incorrect_fields"]:
+                    setattr(model_instance, field_data["field"], field_data["input"])
+                with self.assertRaises(IntegrityError) as context:
+                    with transaction.atomic():
+                        model_instance.save()
+
+
+# test optional DB fields reject incorrect values
+# test correct data is stored
+# test export is generated
