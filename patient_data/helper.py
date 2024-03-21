@@ -162,7 +162,6 @@ def create_patient(
     patient.id = patient_id
     patient.gender = gender
     patient.birth_date = birth_date
-    # the documentation suggests we should treat the absence of a deceases time as the user being alive
     patient.deceased_date_time = deceased_date_time
     patient.city = city
     patient.state = state
