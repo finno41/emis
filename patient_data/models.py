@@ -1,7 +1,29 @@
 from django.db import models
 from patient_data.model_options.language import LANGUAGE_OPTIONS
 from patient_data.model_options.currency import CURRENCY_OPTIONS
+from django.db.models import Q
 import uuid
+
+MARITAL_STATUS_OPTIONS = {
+    "A": "Annulled",
+    "D": "Divorced",
+    "I": "Interlocutory",
+    "L": "Legally Separated",
+    "M": "Married",
+    "C": "Common Law",
+    "P": "Polygamous",
+    "T": "Domestic partner",
+    "U": "unmarried",
+    "S": "Never Married",
+    "W": "Widowed",
+    "UNK": "unknown",
+}
+GENDER_CODES = {
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "unknown": "Unknown",
+}
 
 
 class Patient(models.Model):
@@ -9,31 +31,29 @@ class Patient(models.Model):
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=50)
     country = models.CharField(max_length=50)
-    GENDER_CODES = {
-        "male": "Male",
-        "female": "Female",
-        "other": "Other",
-        "unknown": "Unknown",
-    }
     gender = models.CharField(max_length=7, choices=GENDER_CODES)
     birth_date = models.DateField()
     deceased_date_time = models.DateTimeField(blank=True, null=True)
-    MARITAL_STATUS_OPTIONS = {
-        "A": "Annulled",
-        "D": "Divorced",
-        "I": "Interlocutory",
-        "L": "Legally Separated",
-        "M": "Married",
-        "C": "Common Law",
-        "P": "Polygamous",
-        "T": "Domestic partner",
-        "U": "unmarried",
-        "S": "Never Married",
-        "W": "Widowed",
-        "UNK": "unknown",
-    }
     marital_status = models.CharField(max_length=3, choices=MARITAL_STATUS_OPTIONS)
     language = models.CharField(max_length=5, choices=LANGUAGE_OPTIONS)
+
+    class Meta:
+        # This probably isn't the best way to write constraints for the options but I was
+        # running out of time and was unableto find the correct way to do this
+        constraints = [
+            models.CheckConstraint(
+                name="valid_gender_choice", check=models.Q(gender__in=GENDER_CODES)
+            ),
+            models.CheckConstraint(
+                name="valid_marital_status_choice",
+                check=models.Q(marital_status__in=MARITAL_STATUS_OPTIONS),
+            ),
+            models.CheckConstraint(
+                name="valid_language_choice",
+                check=models.Q(language__in=LANGUAGE_OPTIONS),
+            ),
+            # You may add constraints for other fields as needed
+        ]
 
     @classmethod
     def get_timezone_fields(cls):
