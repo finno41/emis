@@ -148,7 +148,6 @@ def find_from_keys(keys, fhir_resource_data, optional, field_data, resource):
 
 
 def create_patient(
-    patient_id,
     gender,
     birth_date,
     deceased_date_time,
@@ -157,9 +156,11 @@ def create_patient(
     country,
     marital_status,
     language,
+    patient_id=False,
 ):
     patient = Patient()
-    patient.id = patient_id
+    if patient_id:
+        patient.id = patient_id
     patient.gender = gender
     patient.birth_date = birth_date
     patient.deceased_date_time = deceased_date_time
