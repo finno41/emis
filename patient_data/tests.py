@@ -37,6 +37,13 @@ class HfirTests(TestCase):
     ]
     optional_test_data = get_optional_fields_test_data(optional_fields)
 
+    # test optional DB fields reject incorrect values
+    """
+    parameterized.expand splits iterables allowing you to run them as separate tests. In this
+    example, were we to add more model data to the optional_fields variable above it would run as a
+    separate test.
+    """
+
     @parameterized.expand(optional_test_data)
     def test_database_validation(self, optional_fields):
         for i, optional_field_data in enumerate(optional_fields):
@@ -52,7 +59,15 @@ class HfirTests(TestCase):
                     with transaction.atomic():
                         model_instance.save()
 
-
-# test optional DB fields reject incorrect values
-# test correct data is stored
-# test export is generated
+    # test correct data is stored
+    """
+    Unfortunately I ran out of time, but to test the correct data is stored I would mock up some JSON files which I would
+    generate in setUp. I would then grab the objects from the DB and use assertEqual to check
+    them against the expected values
+    """
+    # test export is generated
+    """
+    Initially I would check that an excel file is generated in the API response. I would mock up a request using
+    request factory. For more comprehensive testing I would convert each excel sheet into a data frame and check it
+    against the expected variables in setUp
+    """
