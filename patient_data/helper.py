@@ -19,13 +19,12 @@ def store_fhir_files(data: list):
             main_patient_data = patient_data["resource"]
             patient_id = main_patient_data["id"]
             print(f"Storing data for patient '{patient_id}'")
-            resource = PATIENT_CONFIG
             try:
                 patient = store_resource(
                     patient_data,
                     processable_resource_types,
                     False,
-                    resource=resource,
+                    resource=PATIENT_CONFIG,
                     resource_type_check=False,
                 )
             except:
