@@ -1,6 +1,8 @@
 from patient_data.models import Patient
 from patient_data.data.patient import get_patient_by_id
 from patient_data.data_structure_config import RESOURCE_CONFIG, PATIENT_CONFIG
+import json
+import os
 import re
 import uuid
 
@@ -174,3 +176,20 @@ def create_patient(
     patient.marital_status = marital_status
     patient.language = language
     patient.save()
+
+
+def convert_json_files(relative_file_path):
+    if relative_file_path:
+        file_path = os.path.abspath(relative_file_path)
+
+    if os.path.isdir(file_path):
+        file_paths = [
+            f"{file_path}/{f}" for f in os.listdir(file_path) if not os.path.isdir(f)
+        ]
+    else:
+        file_paths = [file_path]
+    fhir_files = []
+    for file_path in file_paths:
+        with open(file_path, "r") as json_file:
+            fhir_files.append(json.load(json_file))
+    return fhir_files
