@@ -4,7 +4,11 @@ Oliver Finn
 
 ## How to run
 - Download the repo and in the main folder run docker compose up --build
-- Once built, in the Docker container run
+- Once built, enter the docker container CLI
+```
+docker exec -it emis-server-1 /bin/bash
+```
+- then run
 ```
 python manage.py migrate
 ```
@@ -13,7 +17,7 @@ python manage.py migrate
 python manage.py process_fhir patient_data/fhir_data
 ```
 - If you would like to run more json file folders or individual files, save them within the cloned project and run "python manage.py process_fhir" followed by the path you saved them on
-- To view the data in an excel format go to your localhost and go to /export
+- To view the data in an excel format go to http://localhost:8000/export
 
 ## Strategy
 Accomplishing the task to the level required for release was not going to be possible within the time limit (at least I hope not). Rather than rushing to get as much done I tried to focus on storing a few models well with interrelational relationships, and set up a solution that would make it easy to add more resource types going forward. To add further resource types you simply need to create a model, add the information to the config and create a DTO. Additional logic may be required in the helper functions for data types that I have not yet had to process.
@@ -38,5 +42,6 @@ Accomplishing the task to the level required for release was not going to be pos
 - I'd have like to test what happens if you re-run a file more rigorously. I tried to set up the code so that files would be overwritten if present but this currently isn't in the testing
 
 ## What would I do differently
+- I would have written small tests initially to validate the inuts and logic instead of coding blindly
 - I wouldn't have started using bulk create. Whilst the optimal solution would probably include this, this ate up a lot of time and made the code very messy, so I abandoned it. The best solution would've been to write the code and get it working first before refactoring to include bulk actions if I had time afterwards
 - I'd have included the more specific key error handling earlier. I spent a lot of time trying to figure out why some JSON fields weren't getting looked as the key errors I was getting weren't very helpful. It was only after a while I had the idea to raise my own errors which gave me more information and allowed me to solve the problem quicker
