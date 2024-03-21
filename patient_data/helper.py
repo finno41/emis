@@ -7,10 +7,9 @@ import re
 import uuid
 
 
-def store_fhir_files(data: list):
-    processable_resource_types = list(RESOURCE_CONFIG.keys())
+def store_fhir_files(fhir_files: list):
     patients_with_error = []
-    for fhir_file in data:
+    for fhir_file in fhir_files:
         if fhir_file["resourceType"] == "Bundle":
             entries = fhir_file["entry"]
             patient_data = next(
@@ -18,13 +17,11 @@ def store_fhir_files(data: list):
                 for entry in entries
                 if entry["resource"]["resourceType"] == "Patient"
             )
-            main_patient_data = patient_data["resource"]
-            patient_id = main_patient_data["id"]
+            patient_id = patient_data["resource"]["id"]
             print(f"Storing data for patient '{patient_id}'")
             try:
                 patient = store_resource(
                     patient_data,
-                    processable_resource_types,
                     False,
                     resource=PATIENT_CONFIG,
                     resource_type_check=False,
@@ -33,7 +30,7 @@ def store_fhir_files(data: list):
                 patients_with_error.append(patient.id)
             else:
                 for entry in entries:
-                    store_resource(entry, processable_resource_types, patient)
+                    store_resource(entry, patient)
     print(
         f"The following patients were not saved due to incorrect data: '{patients_with_error}'"
     )
@@ -41,11 +38,11 @@ def store_fhir_files(data: list):
 
 def store_resource(
     entry,
-    processable_resource_types,
     patient,
     resource=False,
     resource_type_check=True,
 ):
+    processable_resource_types = list(RESOURCE_CONFIG.keys())
     resource_type = entry["resource"]["resourceType"]
     if resource_type in processable_resource_types or not resource_type_check:
         if not resource:
@@ -115,7 +112,7 @@ def create_join_model(model_instance, field_data, field_value, entry_id):
         model_attribute_name = model_data["name"]
         join_model = join_model_data["model"]
         for model in models:
-            # check join table exists and ignore if it does
+            # to avoid duplicate join tables when re-processing data
             if not join_model.objects.filter(
                 **{
                     model_attribute_name: model,
