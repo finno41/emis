@@ -4,8 +4,14 @@ Oliver Finn
 
 ## How to run
 - Download the repo and in the main folder run docker compose up --build
-- Once built, in the Docker container run python manage.py migrate
-- To download FHIR data run the command "python manage.py process_fhir patient_data/fhir_data"
+- Once built, in the Docker container run
+```
+python manage.py migrate
+```
+- To download FHIR data run the command
+```
+python manage.py process_fhir patient_data/fhir_data
+```
 - If you would like to run more json file folders or individual files, save them within the cloned project and run "python manage.py process_fhir" followed by the path you saved them on
 - To view the data in an excel format go to your localhost and go to /export
 
