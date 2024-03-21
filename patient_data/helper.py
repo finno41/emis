@@ -145,3 +145,28 @@ def find_from_keys(keys, fhir_resource_data, optional, field_data, resource):
                     f"fhir keys '{keys}' are incorrect for field '{field_data['field_name']}' for resource '{resource['key']}'"
                 )
     return value
+
+
+def create_patient(
+    patient_id,
+    gender,
+    birth_date,
+    deceased_date_time,
+    city,
+    state,
+    country,
+    marital_status,
+    language,
+):
+    patient = Patient()
+    patient.id = patient_id
+    patient.gender = gender
+    patient.birth_date = birth_date
+    # the documentation suggests we should treat the absence of a deceases time as the user being alive
+    patient.deceased_date_time = deceased_date_time
+    patient.city = city
+    patient.state = state
+    patient.country = country
+    patient.marital_status = marital_status
+    patient.language = language
+    patient.save()
